@@ -12,10 +12,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-APP_STL := c++_shared
+APP_STL := c++_static
 APP_CPPFLAGS += -fexceptions
 
 #For ANativeWindow support
-APP_PLATFORM = android-21
+APP_PLATFORM = android-23
 
 APP_ABI :=  all

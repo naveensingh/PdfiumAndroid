@@ -1,21 +1,9 @@
-/*
- * Infomaniak PDFium - Android
- * Copyright (C) 2014 Foxit Software Inc. http://www.foxitsoftware.com
- * Copyright (C) 2014 The PDFium Authors
- * Copyright (C) 2025 Infomaniak Network SA
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2014 The PDFium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+// Original code copyright 2014 Foxit Software Inc. http://www.foxitsoftware.com
+
 #ifndef PUBLIC_FPDF_PPO_H_
 #define PUBLIC_FPDF_PPO_H_
 
@@ -92,7 +80,8 @@ FPDF_ImportNPagesToOne(FPDF_DOCUMENT src_doc,
 // |src_page_index|, for use in |dest_doc|.
 //
 // Returns a handle on success, or NULL on failure. Caller owns the newly
-// created object.
+// created object. The returned handle's lifetime is tied to |dest_doc| and not
+// |src_doc|. It must be closed before |dest_doc|.
 FPDF_EXPORT FPDF_XOBJECT FPDF_CALLCONV
 FPDF_NewXObjectFromPage(FPDF_DOCUMENT dest_doc,
                         FPDF_DOCUMENT src_doc,

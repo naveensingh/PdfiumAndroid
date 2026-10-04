@@ -34,6 +34,7 @@ using namespace android;
 #include <fpdf_doc.h>
 #include <fpdf_formfill.h>
 #include <fpdf_text.h>
+#include <fpdf_searchex.h>
 #include <string>
 #include <vector>
 
@@ -72,6 +73,7 @@ class DocumentFile {
     public:
     FPDF_DOCUMENT pdfDocument = NULL;
     FPDF_FORMHANDLE formHandle = NULL;
+    std::vector<jbyte> fileData;
     size_t fileSize;
 
     DocumentFile() { initLibraryIfNeed(); }
@@ -271,9 +273,8 @@ JNI_FUNC(jlong, PdfiumCore, nativeOpenDocument)(JNI_ARGS, jint fd, jstring passw
     }
 
     if (!document) {
-        delete docFile;
-
         const long errorNum = FPDF_GetLastError();
+        delete docFile;
         if(errorNum == FPDF_ERR_PASSWORD) {
             jniThrowException(env, "com/shockwave/pdfium/PdfPasswordException",
                                     "Password required or incorrect password.");
@@ -302,22 +303,18 @@ JNI_FUNC(jlong, PdfiumCore, nativeOpenMemDocument)(JNI_ARGS, jbyteArray data, js
         cpassword = env->GetStringUTFChars(password, NULL);
     }
 
-    jbyte *cData = env->GetByteArrayElements(data, NULL);
     int size = (int) env->GetArrayLength(data);
-    jbyte *cDataCopy = new jbyte[size];
-    memcpy(cDataCopy, cData, size);
-    FPDF_DOCUMENT document = FPDF_LoadMemDocument( reinterpret_cast<const void*>(cDataCopy),
-                                                          size, cpassword);
-    env->ReleaseByteArrayElements(data, cData, JNI_ABORT);
+    docFile->fileData.resize(size);
+    env->GetByteArrayRegion(data, 0, size, docFile->fileData.data());
+    FPDF_DOCUMENT document = FPDF_LoadMemDocument(docFile->fileData.data(), size, cpassword);
 
     if(cpassword != NULL) {
         env->ReleaseStringUTFChars(password, cpassword);
     }
 
     if (!document) {
-        delete docFile;
-
         const long errorNum = FPDF_GetLastError();
+        delete docFile;
         if(errorNum == FPDF_ERR_PASSWORD) {
             jniThrowException(env, "com/shockwave/pdfium/PdfPasswordException",
                                     "Password required or incorrect password.");
@@ -510,6 +507,7 @@ static void renderPageInternal( FPDF_PAGE page,
                      drawSizeHor, drawSizeVer,
                      0, flags);
     }
+    FPDFBitmap_Destroy(pdfBitmap);
 }
 
 JNI_FUNC(void, PdfiumCore, nativeRenderPage)(JNI_ARGS, jlong docPtr, jlong pagePtr, jobject objSurface,
@@ -641,6 +639,7 @@ JNI_FUNC(void, PdfiumCore, nativeRenderPageBitmap)(JNI_ARGS, jlong docPtr, jlong
                      0, flags);
     }
 
+    FPDFBitmap_Destroy(pdfBitmap);
     if (info.format == ANDROID_BITMAP_FORMAT_RGB_565) {
         rgbBitmapTo565(tmp, sourceStride, addr, &info);
         free(tmp);
@@ -784,6 +783,20 @@ JNI_FUNC(jobject, PdfiumCore, nativePageCoordsToDevice)(JNI_ARGS, jlong pagePtr,
     return env->NewObject(clazz, constructorID, deviceX, deviceY);
 }
 
+JNI_FUNC(jobject, PdfiumCore, nativeDeviceCoordsToPage)(JNI_ARGS, jlong pagePtr, jint startX, jint startY,
+                                                         jint sizeX, jint sizeY, jint rotate, jint deviceX,
+                                                         jint deviceY) {
+    FPDF_PAGE page = reinterpret_cast<FPDF_PAGE>(pagePtr);
+    double pageX, pageY;
+    if (!FPDF_DeviceToPage(page, startX, startY, sizeX, sizeY, rotate, deviceX, deviceY, &pageX, &pageY)) {
+        jniThrowException(env, "java/lang/IllegalArgumentException", "Unable to map device coordinates");
+        return NULL;
+    }
+    jclass clazz = env->FindClass("android/graphics/PointF");
+    jmethodID constructorID = env->GetMethodID(clazz, "<init>", "(FF)V");
+    return env->NewObject(clazz, constructorID, (jfloat) pageX, (jfloat) pageY);
+}
+
 JNI_FUNC(jlong, PdfiumCore, nativeLoadTextPage)(JNI_ARGS, jlong pagePtr) {
     FPDF_PAGE page = reinterpret_cast<FPDF_PAGE>(pagePtr);
     if (page == NULL) {
@@ -810,7 +823,7 @@ JNI_FUNC(void, PdfiumCore, nativeCloseTextPage)(JNI_ARGS, jlong textPagePtr) {
 
 JNI_FUNC(jint, PdfiumCore, nativeGetPageTextCount)(JNI_ARGS, jlong textPagePtr) {
     if (textPagePtr == 0) {
-        return;
+        return 0;
     }
     FPDF_TEXTPAGE textPage = reinterpret_cast<FPDF_TEXTPAGE>(textPagePtr);
     if (textPage == NULL) {
@@ -821,7 +834,7 @@ JNI_FUNC(jint, PdfiumCore, nativeGetPageTextCount)(JNI_ARGS, jlong textPagePtr) 
 
 JNI_FUNC(jstring, PdfiumCore, nativeGetPageText)(JNI_ARGS, jlong textPagePtr, jint startIndex, jint count) {
     if (textPagePtr == 0) {
-        return;
+        return env->NewStringUTF("");
     }
     FPDF_TEXTPAGE textPage = reinterpret_cast<FPDF_TEXTPAGE>(textPagePtr);
     if (textPage == NULL || count <= 0) {
@@ -841,10 +854,20 @@ JNI_FUNC(jstring, PdfiumCore, nativeGetPageText)(JNI_ARGS, jlong textPagePtr, ji
     return env->NewString(reinterpret_cast<const jchar*>(buffer.data()), copiedChars);
 }
 
+JNI_FUNC(jint, PdfiumCore, nativeGetCharIndexFromTextIndex)(JNI_ARGS, jlong textPagePtr, jint textIndex) {
+    FPDF_TEXTPAGE textPage = reinterpret_cast<FPDF_TEXTPAGE>(textPagePtr);
+    return FPDFText_GetCharIndexFromTextIndex(textPage, textIndex);
+}
+
+JNI_FUNC(jint, PdfiumCore, nativeGetTextIndexFromCharIndex)(JNI_ARGS, jlong textPagePtr, jint charIndex) {
+    FPDF_TEXTPAGE textPage = reinterpret_cast<FPDF_TEXTPAGE>(textPagePtr);
+    return FPDFText_GetTextIndexFromCharIndex(textPage, charIndex);
+}
+
 JNI_FUNC(jint, PdfiumCore, nativeGetCharIndexAtCoord)(JNI_ARGS, jlong textPagePtr, jdouble pageX, jdouble pageY,
                                                       jdouble xTolerance, jdouble yTolerance) {
     if (textPagePtr == 0) {
-        return;
+        return -1;
     }
     FPDF_TEXTPAGE textPage = reinterpret_cast<FPDF_TEXTPAGE>(textPagePtr);
     if (textPage == NULL) {
@@ -855,7 +878,7 @@ JNI_FUNC(jint, PdfiumCore, nativeGetCharIndexAtCoord)(JNI_ARGS, jlong textPagePt
 
 JNI_FUNC(jobject, PdfiumCore, nativeGetCharBox)(JNI_ARGS, jlong textPagePtr, jint charIndex) {
     if (textPagePtr == 0) {
-        return;
+        return NULL;
     }
     FPDF_TEXTPAGE textPage = reinterpret_cast<FPDF_TEXTPAGE>(textPagePtr);
     if (textPage == NULL) {

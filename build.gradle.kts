@@ -5,7 +5,7 @@ buildscript {
     val baseVersionName = "1.9.12"
 
     extra.apply {
-        set("libMinSdk", 21)
+        set("libMinSdk", 23)
         set("libCompileSdk", 37)
         set("libTargetSdk", 37)
 
@@ -39,7 +39,7 @@ version = libVersionName
 android {
     namespace = "com.shockwave.pdfium"
     compileSdk = libCompileSdk
-    ndkVersion = ndkVersion
+    ndkVersion = rootProject.extra["ndkVersion"] as String
 
     sourceSets {
         getByName("main") {
@@ -49,6 +49,18 @@ android {
 
     defaultConfig {
         minSdk = libMinSdk
+        externalNativeBuild {
+            cmake {
+                arguments += "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
 
     buildTypes {

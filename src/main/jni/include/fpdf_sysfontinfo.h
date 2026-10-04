@@ -1,21 +1,9 @@
-/*
- * Infomaniak PDFium - Android
- * Copyright (C) 2014 Foxit Software Inc. http://www.foxitsoftware.com
- * Copyright (C) 2014 The PDFium Authors
- * Copyright (C) 2025 Infomaniak Network SA
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2014 The PDFium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+// Original code copyright 2014 Foxit Software Inc. http://www.foxitsoftware.com
+
 #ifndef PUBLIC_FPDF_SYSFONTINFO_H_
 #define PUBLIC_FPDF_SYSFONTINFO_H_
 
@@ -58,14 +46,17 @@ extern "C" {
 // Interface: FPDF_SYSFONTINFO
 //          Interface for getting system font information and font mapping
 typedef struct _FPDF_SYSFONTINFO {
-  // Version number of the interface. Currently must be 1.
+  // Version number of the interface. Currently must be 1 or 2.
+  // Version 1: Traditional behavior - calls EnumFonts during initialization.
+  // Version 2: Per-request behavior - skips EnumFonts, relies on MapFont.
+  //            Experimental: Subject to change based on feedback.
   int version;
 
   // Method: Release
   //          Give implementation a chance to release any data after the
   //          interface is no longer used.
   // Interface Version:
-  //          1
+  //          1 and 2
   // Implementation Required:
   //          No
   // Parameters:
@@ -92,13 +83,15 @@ typedef struct _FPDF_SYSFONTINFO {
   //          Implementations should call FPDF_AddInstalledFont() function for
   //          each font found. Only TrueType/OpenType and Type1 fonts are
   //          accepted by PDFium.
+  //          NOTE: This method will not be called when version is set to 2.
+  //          Version 2 relies entirely on MapFont() for per-request matching.
   void (*EnumFonts)(struct _FPDF_SYSFONTINFO* pThis, void* pMapper);
 
   // Method: MapFont
   //          Use the system font mapper to get a font handle from requested
   //          parameters.
   // Interface Version:
-  //          1
+  //          1 and 2
   // Implementation Required:
   //          Required if GetFont method is not implemented.
   // Parameters:
@@ -134,7 +127,7 @@ typedef struct _FPDF_SYSFONTINFO {
   // Method: GetFont
   //          Get a handle to a particular font by its internal ID
   // Interface Version:
-  //          1
+  //          1 and 2
   // Implementation Required:
   //          Required if MapFont method is not implemented.
   // Return Value:
@@ -150,7 +143,7 @@ typedef struct _FPDF_SYSFONTINFO {
   // Method: GetFontData
   //          Get font data from a font
   // Interface Version:
-  //          1
+  //          1 and 2
   // Implementation Required:
   //          Yes
   // Parameters:
@@ -176,7 +169,7 @@ typedef struct _FPDF_SYSFONTINFO {
   // Method: GetFaceName
   //          Get face name from a font handle
   // Interface Version:
-  //          1
+  //          1 and 2
   // Implementation Required:
   //          No
   // Parameters:
@@ -196,7 +189,7 @@ typedef struct _FPDF_SYSFONTINFO {
   // Method: GetFontCharset
   //          Get character set information for a font handle
   // Interface Version:
-  //          1
+  //          1 and 2
   // Implementation Required:
   //          No
   // Parameters:
@@ -209,7 +202,7 @@ typedef struct _FPDF_SYSFONTINFO {
   // Method: DeleteFont
   //          Delete a font handle
   // Interface Version:
-  //          1
+  //          1 and 2
   // Implementation Required:
   //          Yes
   // Parameters:
@@ -282,7 +275,7 @@ FPDF_EXPORT void FPDF_CALLCONV FPDF_AddInstalledFont(void* mapper,
 // Function: FPDF_SetSystemFontInfo
 //          Set the system font info interface into PDFium
 // Parameters:
-//          pFontInfo       -   Pointer to a FPDF_SYSFONTINFO structure
+//          font_info       -   Pointer to a FPDF_SYSFONTINFO structure
 // Return Value:
 //          None
 // Comments:
@@ -293,7 +286,7 @@ FPDF_EXPORT void FPDF_CALLCONV FPDF_AddInstalledFont(void* mapper,
 //          Call this with NULL to tell PDFium to stop using a previously set
 //          |FPDF_SYSFONTINFO|.
 FPDF_EXPORT void FPDF_CALLCONV
-FPDF_SetSystemFontInfo(FPDF_SYSFONTINFO* pFontInfo);
+FPDF_SetSystemFontInfo(FPDF_SYSFONTINFO* font_info);
 
 // Function: FPDF_GetDefaultSystemFontInfo
 //          Get default system font info interface for current platform
@@ -313,14 +306,14 @@ FPDF_EXPORT FPDF_SYSFONTINFO* FPDF_CALLCONV FPDF_GetDefaultSystemFontInfo();
 // Function: FPDF_FreeDefaultSystemFontInfo
 //           Free a default system font info interface
 // Parameters:
-//           pFontInfo       -   Pointer to a FPDF_SYSFONTINFO structure
+//           font_info       -   Pointer to a FPDF_SYSFONTINFO structure
 // Return Value:
 //           None
 // Comments:
 //           This function should be called on the output from
 //           FPDF_GetDefaultSystemFontInfo() once it is no longer needed.
 FPDF_EXPORT void FPDF_CALLCONV
-FPDF_FreeDefaultSystemFontInfo(FPDF_SYSFONTINFO* pFontInfo);
+FPDF_FreeDefaultSystemFontInfo(FPDF_SYSFONTINFO* font_info);
 
 #ifdef __cplusplus
 }

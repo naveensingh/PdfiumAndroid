@@ -1,20 +1,7 @@
-/*
- * Infomaniak PDFium - Android
- * Copyright (C) 2017 The PDFium Authors
- * Copyright (C) 2025 Infomaniak Network SA
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2017 The PDFium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #ifndef PUBLIC_FPDF_ANNOT_H_
 #define PUBLIC_FPDF_ANNOT_H_
 
@@ -302,7 +289,7 @@ FPDFAnnot_RemoveObject(FPDF_ANNOTATION annot, int index);
 // Experimental API.
 // Set the color of an annotation. Fails when called on annotations with
 // appearance streams already defined; instead use
-// FPDFPath_Set{Stroke|Fill}Color().
+// FPDFPageObj_Set{Stroke|Fill}Color().
 //
 //   annot    - handle to an annotation.
 //   type     - type of the color to be set.
@@ -321,7 +308,7 @@ FPDF_EXPORT FPDF_BOOL FPDF_CALLCONV FPDFAnnot_SetColor(FPDF_ANNOTATION annot,
 // Get the color of an annotation. If no color is specified, default to yellow
 // for highlight annotation, black for all else. Fails when called on
 // annotations with appearance streams already defined; instead use
-// FPDFPath_Get{Stroke|Fill}Color().
+// FPDFPageObj_Get{Stroke|Fill}Color().
 //
 //   annot    - handle to an annotation.
 //   type     - type of the color requested.
@@ -406,10 +393,7 @@ FPDFAnnot_GetAttachmentPoints(FPDF_ANNOTATION annot,
                               FS_QUADPOINTSF* quad_points);
 
 // Experimental API.
-// Set the annotation rectangle defining the location of the annotation. If the
-// annotation's appearance stream is defined and this annotation is of a type
-// without quadpoints, then update the bounding box too if the new rectangle
-// defines a bigger one.
+// Set the annotation rectangle defining the location of the annotation.
 //
 //   annot  - handle to an annotation.
 //   rect   - the annotation rectangle to be set.
@@ -699,6 +683,20 @@ FPDFAnnot_GetFormFieldFlags(FPDF_FORMHANDLE handle,
                             FPDF_ANNOTATION annot);
 
 // Experimental API.
+// Sets the form field flags for an interactive form annotation.
+//
+//   handle       -   the handle to the form fill module, returned by
+//                    FPDFDOC_InitFormFillEnvironment().
+//   annot        -   handle to an interactive form annotation.
+//   flags        -   the form field flags to be set.
+//
+// Returns true if successful.
+FPDF_EXPORT FPDF_BOOL FPDF_CALLCONV
+FPDFAnnot_SetFormFieldFlags(FPDF_FORMHANDLE handle,
+                            FPDF_ANNOTATION annot,
+                            int flags);
+
+// Experimental API.
 // Retrieves an interactive form annotation whose rectangle contains a given
 // point on a page. Must call FPDFPage_CloseAnnot() when the annotation returned
 // is no longer needed.
@@ -857,6 +855,27 @@ FPDF_EXPORT FPDF_BOOL FPDF_CALLCONV
 FPDFAnnot_GetFontSize(FPDF_FORMHANDLE hHandle,
                       FPDF_ANNOTATION annot,
                       float* value);
+
+// Experimental API.
+// Set the text color of an annotation.
+//
+//   handle   - handle to the form fill module, returned by
+//              FPDFDOC_InitFormFillEnvironment.
+//   annot    - handle to an annotation.
+//   R        - the red component for the text color.
+//   G        - the green component for the text color.
+//   B        - the blue component for the text color.
+//
+// Returns true if successful.
+//
+// Currently supported subtypes: freetext.
+// The range for the color components is 0 to 255.
+FPDF_EXPORT FPDF_BOOL FPDF_CALLCONV
+FPDFAnnot_SetFontColor(FPDF_FORMHANDLE handle,
+                       FPDF_ANNOTATION annot,
+                       unsigned int R,
+                       unsigned int G,
+                       unsigned int B);
 
 // Experimental API.
 // Get the RGB value of the font color for an |annot| with variable text.

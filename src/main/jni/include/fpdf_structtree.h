@@ -1,21 +1,9 @@
-/*
- * Infomaniak PDFium - Android
- * Copyright (C) 2014 Foxit Software Inc. http://www.foxitsoftware.com
- * Copyright (C) 2016 The PDFium Authors
- * Copyright (C) 2025 Infomaniak Network SA
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2016 The PDFium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+// Original code copyright 2014 Foxit Software Inc. http://www.foxitsoftware.com
+
 #ifndef PUBLIC_FPDF_STRUCTTREE_H_
 #define PUBLIC_FPDF_STRUCTTREE_H_
 
@@ -114,6 +102,28 @@ FPDF_EXPORT unsigned long FPDF_CALLCONV
 FPDF_StructElement_GetActualText(FPDF_STRUCTELEMENT struct_element,
                                  void* buffer,
                                  unsigned long buflen);
+
+// Experimental API.
+// Function: FPDF_StructElement_GetExpansion
+//          Get the expansion of an abbreviation or acronym for a given element.
+// Parameters:
+//          struct_element -   Handle to the struct element.
+//          buffer         -   A buffer for output the expansion text. May be
+//                             NULL.
+//          buflen         -   The length of the buffer, in bytes. May be 0.
+// Return value:
+//          The number of bytes in the expansion text, including the terminating
+//          NUL character. The number of bytes is returned regardless of the
+//          |buffer| and |buflen| parameters.
+// Comments:
+//          Regardless of the platform, the |buffer| is always in UTF-16LE
+//          encoding. The string is terminated by a UTF16 NUL character. If
+//          |buflen| is less than the required length, or |buffer| is NULL,
+//          |buffer| will not be modified.
+FPDF_EXPORT unsigned long FPDF_CALLCONV
+FPDF_StructElement_GetExpansion(FPDF_STRUCTELEMENT struct_element,
+                                void* buffer,
+                                unsigned long buflen);
 
 // Function: FPDF_StructElement_GetID
 //          Get the ID for a given element.

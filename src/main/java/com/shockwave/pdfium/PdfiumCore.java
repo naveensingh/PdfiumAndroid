@@ -40,8 +40,6 @@ public class PdfiumCore {
 
     static {
         try {
-            System.loadLibrary("modpng");
-            System.loadLibrary("modft2");
             System.loadLibrary("modpdfium");
             System.loadLibrary("jniPdfium");
         } catch (UnsatisfiedLinkError e) {
@@ -118,6 +116,10 @@ public class PdfiumCore {
     private native int nativeGetPageTextCount(long textPagePtr);
 
     private native String nativeGetPageText(long textPagePtr, int startIndex, int count);
+
+    private native int nativeGetCharIndexFromTextIndex(long textPagePtr, int textIndex);
+
+    private native int nativeGetTextIndexFromCharIndex(long textPagePtr, int charIndex);
 
     private native int nativeGetCharIndexAtCoord(long textPagePtr, double pageX, double pageY,
                                                  double xTolerance, double yTolerance);
@@ -488,8 +490,10 @@ public class PdfiumCore {
      */
     public Point mapPageCoordsToDevice(PdfDocument doc, int pageIndex, int startX, int startY, int sizeX,
                                        int sizeY, int rotate, double pageX, double pageY) {
-        long pagePtr = doc.mNativePagesPtr.get(pageIndex);
-        return nativePageCoordsToDevice(pagePtr, startX, startY, sizeX, sizeY, rotate, pageX, pageY);
+        synchronized (lock) {
+            long pagePtr = doc.mNativePagesPtr.get(pageIndex);
+            return nativePageCoordsToDevice(pagePtr, startX, startY, sizeX, sizeY, rotate, pageX, pageY);
+        }
     }
 
     /**
@@ -529,8 +533,10 @@ public class PdfiumCore {
      */
     public PointF mapDeviceCoordsToPage(PdfDocument doc, int pageIndex, int startX, int startY, int sizeX,
                                         int sizeY, int rotate, int deviceX, int deviceY) {
-        long pagePtr = doc.mNativePagesPtr.get(pageIndex);
-        return nativeDeviceCoordsToPage(pagePtr, startX, startY, sizeX, sizeY, rotate, deviceX, deviceY);
+        synchronized (lock) {
+            long pagePtr = doc.mNativePagesPtr.get(pageIndex);
+            return nativeDeviceCoordsToPage(pagePtr, startX, startY, sizeX, sizeY, rotate, deviceX, deviceY);
+        }
     }
 
     /**
@@ -610,6 +616,18 @@ public class PdfiumCore {
                 return "";
             }
             return nativeGetPageText(openTextPage(doc, pageIndex), startIndex, count);
+        }
+    }
+
+    public int getCharIndexFromTextIndex(PdfDocument doc, int pageIndex, int textIndex) {
+        synchronized (lock) {
+            return nativeGetCharIndexFromTextIndex(openTextPage(doc, pageIndex), textIndex);
+        }
+    }
+
+    public int getTextIndexFromCharIndex(PdfDocument doc, int pageIndex, int charIndex) {
+        synchronized (lock) {
+            return nativeGetTextIndexFromCharIndex(openTextPage(doc, pageIndex), charIndex);
         }
     }
 

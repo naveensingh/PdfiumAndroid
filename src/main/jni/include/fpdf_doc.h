@@ -1,21 +1,9 @@
-/*
- * Infomaniak PDFium - Android
- * Copyright (C) 2014 Foxit Software Inc. http://www.foxitsoftware.com
- * Copyright (C) 2014 The PDFium Authors
- * Copyright (C) 2025 Infomaniak Network SA
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2014 The PDFium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+// Original code copyright 2014 Foxit Software Inc. http://www.foxitsoftware.com
+
 #ifndef PUBLIC_FPDF_DOC_H_
 #define PUBLIC_FPDF_DOC_H_
 
@@ -147,6 +135,32 @@ FPDFBookmark_GetDest(FPDF_DOCUMENT document, FPDF_BOOKMARK bookmark);
 // the |bookmark| destination data.
 FPDF_EXPORT FPDF_ACTION FPDF_CALLCONV
 FPDFBookmark_GetAction(FPDF_BOOKMARK bookmark);
+
+// Experimental API.
+// Get the color of a bookmark.
+//
+// bookmark - handle to a bookmark.
+// R        - pointer to a float to receive the red component [0.0 - 1.0].
+// G        - pointer to a float to receive the green component [0.0 - 1.0].
+// B        - pointer to a float to receive the blue component [0.0 - 1.0].
+//
+// Returns TRUE on success, in which case |R|, |G|, and |B| are updated.
+// Returns FALSE on failure, if the bookmark is invalid, output for R, G and B
+// aren't in the range or if the bookmark does not specify a color.
+FPDF_EXPORT FPDF_BOOL FPDF_CALLCONV
+FPDFBookmark_GetColor(FPDF_BOOKMARK bookmark, float* R, float* G, float* B);
+
+// Experimental API.
+// Get the text style of a bookmark.
+//
+// bookmark - handle to a bookmark.
+//
+// Returns the style as an integer, in line with ISO 32000-1:2008 Table 154.
+// The first bit is used to represent if the text is italic and the second
+// bit is used to represent if the text is bold. Returns 0 if the bookmark
+// doesn't have styling or if the handle is invalid. Parsing this value to
+// apply styles remains the responsibility of the embedder.
+FPDF_EXPORT int FPDF_CALLCONV FPDFBookmark_GetStyle(FPDF_BOOKMARK bookmark);
 
 // Get the type of |action|.
 //
@@ -411,7 +425,10 @@ FPDF_GetFileIdentifier(FPDF_DOCUMENT document,
 //   buffer   - a buffer for the tag. May be NULL.
 //   buflen   - the length of the buffer, in bytes. May be 0.
 //
-// Returns the number of bytes in the tag, including trailing zeros.
+// Returns the number of bytes in the tag, including trailing zeros, on success.
+// Returns 0 if |document| or |tag| is NULL. Returns 0 if |document| does not
+// have an /Info dictionary. Returns 2 for an empty string if |tag| is not in
+// the /Info dictionary,
 //
 // The |buffer| is always encoded in UTF-16LE. The |buffer| is followed by two
 // bytes of zeros indicating the end of the string.  If |buflen| is less than
